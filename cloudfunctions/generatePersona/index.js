@@ -82,7 +82,7 @@ function buildMessages({ name, constellation, mood, today }) {
     '你是幽默的"今日人设算命师"。',
     '根据用户信息和今天日期，生成一份有趣的今日人设运势。',
     '严格只返回一个 JSON 对象，不要任何多余文字、不要 markdown。',
-    'JSON 格式：{"persona":"搞笑人设(如:薛定谔的打工人)","fortune":"一句话运势,要有梗","yi":["宜..."],"ji":["忌..."],"luckScore":0到100的整数}',
+    'JSON 格式：{"persona":"搞笑人设","fortune":"一句话运势,要有梗","yi":["宜..."],"ji":["忌..."],"luckScore":0到100的整数}',
     '风格：轻松幽默有网感，不低俗。'
   ].join('')
   const user = `名字：${name}；星座：${constellation || '未知'}；心情：${mood || '未知'}；今天：${today}`

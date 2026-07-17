@@ -1,10 +1,19 @@
 <view class="container">
   <view class="title">🎭 今日人设生成器</view>
 
-  <!-- 未登录：显示登录入口 -->
+  <!-- 未登录：选头像 + 填昵称 -->
   <view wx:if="{{!userInfo}}">
-    <view style="text-align:center;color:#999;margin:20px 0">登录后才能生成今日人设</view>
-    <button class="btn" bindtap="login">微信登录</button>
+    <view style="text-align:center;color:#999;margin:15px 0">登录后才能生成今日人设</view>
+
+    <button open-type="chooseAvatar" bindchooseavatar="onChooseAvatar"
+      style="width:80px;height:80px;padding:0;margin:0 auto 15px;border-radius:50%;overflow:hidden;background:#eee;display:block;line-height:80px">
+      <image wx:if="{{avatarUrl}}" style="width:80px;height:80px" src="{{avatarUrl}}" mode="aspectFill" />
+      <view wx:else style="font-size:12px;color:#999;text-align:center">选头像</view>
+    </button>
+
+    <input class="input" type="nickname" placeholder="点击填写昵称" bindinput="onNicknameInput" value="{{nickName}}" />
+
+    <button class="btn" bindtap="confirmLogin">进入</button>
   </view>
 
   <!-- 已登录：显示生成功能 -->

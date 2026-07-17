@@ -4,12 +4,13 @@
   <view wx:if="{{userInfo}}" class="card">
     <image class="avatar" src="{{userInfo.avatarUrl}}" />
     <view class="nick">{{userInfo.nickName}}</view>
+    <view class="sub">🎭 今日人设玩家</view>
     <button class="btn" bindtap="logout">退出登录</button>
   </view>
 
   <view wx:else class="card">
     <view class="muted">登录后体验更完整</view>
-    <button class="btn" bindtap="login">微信登录</button>
+    <view class="muted">请到「生成」页登录</view>
   </view>
 
   <view class="tip">你的生成记录靠微信身份自动隔离，只有你能看到。</view>

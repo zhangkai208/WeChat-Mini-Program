@@ -7,24 +7,44 @@ Page({
     loading: false,
     result: null,
     errMsg: '',
-    userInfo: null   // 登录态：null 表示未登录
+    userInfo: null,   // 已登录：{ avatarUrl, nickName }
+    avatarUrl: '',    // 登录表单中选的头像（临时路径）
+    nickName: ''      // 登录表单中填的昵称
   },
 
-  // 每次进入首页，从本地缓存读登录态（和「我的」页共享同一个 key）
+  // 每次进入首页，从本地缓存读登录态
   onShow() {
     const userInfo = wx.getStorageSync('userInfo')
     if (userInfo) this.setData({ userInfo })
   },
 
-  // 微信授权登录（拿头像 + 昵称）
-  async login() {
-    try {
-      const { userInfo } = await wx.getUserProfile({ desc: '登录后才能生成今日人设' })
-      this.setData({ userInfo })
-      wx.setStorageSync('userInfo', userInfo)
-    } catch (e) {
-      wx.showToast({ title: '已取消', icon: 'none' })
+  // 选头像（button open-type="chooseAvatar" 触发）
+  onChooseAvatar(e) {
+    this.setData({ avatarUrl: e.detail.avatarUrl })
+  },
+
+  // 填昵称（input type="nickname"）
+  onNicknameInput(e) {
+    this.setData({ nickName: e.detail.value })
+  },
+
+  // 点"进入"完成登录：校验 + 保存登录态到本地缓存
+  // 头像用临时路径直接存本地；微信换头像后"退出重登"即可刷新，避免云端存旧的不一致
+  confirmLogin() {
+    if (!this.data.avatarUrl) {
+      wx.showToast({ title: '请先选头像', icon: 'none' })
+      return
     }
+    if (!this.data.nickName.trim()) {
+      wx.showToast({ title: '请填昵称', icon: 'none' })
+      return
+    }
+    const userInfo = {
+      avatarUrl: this.data.avatarUrl,   // chooseAvatar 返回的临时路径
+      nickName: this.data.nickName.trim()
+    }
+    this.setData({ userInfo })
+    wx.setStorageSync('userInfo', userInfo)
   },
 
   onNameInput(e) { this.setData({ name: e.detail.value }) },
@@ -32,9 +52,9 @@ Page({
   onConstellationChange(e) { this.setData({ constellationIdx: e.detail.value }) },
 
   async generate() {
-    // 登录拦截：未登录直接拦住
+    // 登录拦截
     if (!this.data.userInfo) {
-      this.setData({ errMsg: '请先点上方"微信登录"' })
+      this.setData({ errMsg: '请先完成上方登录' })
       return
     }
 
@@ -51,7 +71,6 @@ Page({
       })
       const r = res.result
       if (r.code === 'DUP_TODAY') {
-        // 今天已生成过：提示 + 展示之前的结果
         this.setData({ errMsg: r.msg, result: r.data })
       } else if (r.code !== 'OK') {
         this.setData({ errMsg: r.msg || '生成失败，请重试' })

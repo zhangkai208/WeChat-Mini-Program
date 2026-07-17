@@ -1,23 +1,16 @@
 Page({
   data: { userInfo: null },
 
+  // 每次进入"我的"页，读最新登录态（首页登录后这里能同步显示）
   onShow() {
-    const cached = wx.getStorageSync('userInfo')
-    if (cached) this.setData({ userInfo: cached })
+    const userInfo = wx.getStorageSync('userInfo')
+    this.setData({ userInfo: userInfo || null })
   },
 
-  async login() {
-    try {
-      const { userInfo } = await wx.getUserProfile({ desc: '展示头像和昵称' })
-      this.setData({ userInfo })
-      wx.setStorageSync('userInfo', userInfo)
-    } catch (e) {
-      wx.showToast({ title: '已取消', icon: 'none' })
-    }
-  },
-
+  // 退出登录：清缓存
   logout() {
     wx.removeStorageSync('userInfo')
     this.setData({ userInfo: null })
+    wx.showToast({ title: '已退出', icon: 'none' })
   }
 })
