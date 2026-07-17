@@ -4,6 +4,8 @@
 // 安全：AI_KEY 只从环境变量读，绝不硬编码、不入库、不入日志。
 //       AI_URL/AI_MODEL 同样走环境变量。
 const cloud = require('wx-server-sdk')
+const https = require('https')
+const { URL } = require('url')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const AI_URL = process.env.AI_URL
@@ -69,26 +71,50 @@ function buildMessages({ name, constellation, mood, today }) {
   ]
 }
 
-// OpenAI 兼容格式调用。若你的接口格式不同，改这里。
+// OpenAI 兼容格式调用。云函数 Node16 运行时无全局 fetch，改用原生 https。
 async function callAI(messages) {
   const key = process.env.AI_KEY
   if (!AI_URL) throw new Error('未配置 AI_URL')
   if (!key) throw new Error('未配置 AI_KEY')
 
-  const res = await fetch(AI_URL, {
+  const body = JSON.stringify({
+    model: process.env.AI_MODEL,
+    messages,
+    temperature: 0.9
+  })
+
+  const u = new URL(AI_URL)
+  const options = {
     method: 'POST',
+    hostname: u.hostname,
+    path: u.pathname + u.search,
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + key
-    },
-    body: JSON.stringify({
-      model: process.env.AI_MODEL || 'deepseek-chat',
-      messages,
-      temperature: 0.9
+      'Authorization': 'Bearer ' + key,
+      // 用字节长度，避免中文 body 被算短导致请求被截断
+      'Content-Length': Buffer.byteLength(body)
+    }
+  }
+
+  const text = await new Promise((resolve, reject) => {
+    const req = https.request(options, (res) => {
+      let chunk = ''
+      res.on('data', (c) => { chunk += c })
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) {
+          // chunk 是网关响应体，不含 key，带上一段方便排查
+          reject(new Error('HTTP ' + res.statusCode + (chunk ? '：' + chunk.slice(0, 200) : '')))
+          return
+        }
+        resolve(chunk)
+      })
     })
+    req.on('error', reject)
+    req.write(body)
+    req.end()
   })
-  if (!res.ok) throw new Error('HTTP ' + res.status)
-  const data = await res.json()
+
+  const data = JSON.parse(text)
   return data.choices[0].message.content
 }
 
