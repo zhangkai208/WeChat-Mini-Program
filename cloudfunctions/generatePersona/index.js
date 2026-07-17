@@ -1,5 +1,5 @@
 // 云函数：generatePersona
-// 职责：拼 prompt → HTTP 调 AI → 解析 → 存 records → 返回
+// 职责：拿openid → 查当天是否已生成 → 拼prompt → HTTP调AI → 解析 → 存records → 返回
 //
 // 安全：AI_KEY 只从环境变量读，绝不硬编码、不入库、不入日志。
 //       AI_URL/AI_MODEL 同样走环境变量。
@@ -13,13 +13,34 @@ const AI_URL = process.env.AI_URL
 exports.main = async (event) => {
   const { name, constellation = '', mood = '' } = event
 
-  // 1. 参数校验
+  // 拿到当前调用者的 openid（微信底层自动提供，无需前端传）
+  const { OPENID } = cloud.getWXContext()
+
+  // 0. 参数校验
   if (!name || !name.trim()) {
     return { code: 'PARAM_ERR', msg: '请输入名字' }
   }
 
-  // 2. 今天的日期（云函数默认 UTC，转成上海时区的日期串）
+  // 1. 今天的日期（云函数默认 UTC，转成上海时区）
   const today = new Date().toLocaleDateString('zh-CN', { timeZone: 'Asia/Shanghai' })
+  const db = cloud.database()
+
+  // 2. 一天一次：查当前 openid 今天有没有生成过
+  try {
+    const dup = await db.collection('records')
+      .where({ _openid: OPENID, date: today })
+      .limit(1)
+      .get()
+    if (dup.data.length > 0) {
+      return {
+        code: 'DUP_TODAY',
+        msg: '今天已经生成过啦，明天再来～',
+        data: dup.data[0]   // 把已有的结果返回，前端直接展示
+      }
+    }
+  } catch (e) {
+    // 查重失败不阻塞生成（容错），继续往下
+  }
 
   // 3. 调 AI
   let aiText
@@ -37,10 +58,10 @@ exports.main = async (event) => {
     return { code: 'PARSE_ERR', msg: 'AI 返回格式异常', raw: aiText }
   }
 
-  // 5. 写入 records（云数据库自动带 _openid，按用户隔离）
-  const db = cloud.database()
+  // 5. 写入 records（显式写 _openid，否则前端"仅创建者可读写"读不到）
   await db.collection('records').add({
     data: {
+      _openid: OPENID,
       name, constellation, mood,
       persona: parsed.persona,
       fortune: parsed.fortune,

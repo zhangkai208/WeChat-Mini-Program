@@ -1,17 +1,26 @@
 <view class="container">
   <view class="title">🎭 今日人设生成器</view>
 
-  <input class="input" placeholder="输入你的名字" bindinput="onNameInput" value="{{name}}" />
+  <!-- 未登录：显示登录入口 -->
+  <view wx:if="{{!userInfo}}">
+    <view style="text-align:center;color:#999;margin:20px 0">登录后才能生成今日人设</view>
+    <button class="btn" bindtap="login">微信登录</button>
+  </view>
 
-  <picker mode="selector" range="{{constellations}}" bindchange="onConstellationChange" value="{{constellationIdx}}">
-    <view class="input">星座：{{constellations[constellationIdx] || '选填'}}</view>
-  </picker>
+  <!-- 已登录：显示生成功能 -->
+  <view wx:else>
+    <input class="input" placeholder="输入你的名字" bindinput="onNameInput" value="{{name}}" />
 
-  <input class="input" placeholder="今天心情如何？（选填）" bindinput="onMoodInput" value="{{mood}}" />
+    <picker mode="selector" range="{{constellations}}" bindchange="onConstellationChange" value="{{constellationIdx}}">
+      <view class="input">星座：{{constellations[constellationIdx] || '选填'}}</view>
+    </picker>
 
-  <button class="btn" bindtap="generate" loading="{{loading}}" disabled="{{loading}}">
-    生成今日人设
-  </button>
+    <input class="input" placeholder="今天心情如何？（选填）" bindinput="onMoodInput" value="{{mood}}" />
+
+    <button class="btn" bindtap="generate" loading="{{loading}}" disabled="{{loading}}">
+      生成今日人设
+    </button>
+  </view>
 
   <view wx:if="{{errMsg}}" class="err">{{errMsg}}</view>
 
