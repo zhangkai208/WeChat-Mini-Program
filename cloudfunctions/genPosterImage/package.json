@@ -1,0 +1,9 @@
+{
+  "name": "genPosterImage",
+  "version": "1.0.0",
+  "description": "文生图：生成今日人设海报背景图（HY-Image）",
+  "main": "index.js",
+  "dependencies": {
+    "@cloudbase/node-sdk": "latest"
+  }
+}
