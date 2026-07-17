@@ -1,0 +1,29 @@
+page {
+  background: #faf7f2;
+  font-family: -apple-system, "PingFang SC", "Helvetica Neue", sans-serif;
+  color: #333;
+}
+.container { padding: 40rpx; }
+.title { font-size: 44rpx; font-weight: 700; margin-bottom: 30rpx; text-align: center; }
+.input {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 24rpx;
+  margin-bottom: 20rpx;
+  font-size: 30rpx;
+}
+.btn {
+  background: #e8a87c;
+  color: #fff;
+  border-radius: 40rpx;
+  margin: 20rpx 0;
+  font-size: 32rpx;
+}
+.err { color: #d9534f; text-align: center; margin-top: 10rpx; font-size: 26rpx; }
+.card {
+  background: #fff;
+  border-radius: 20rpx;
+  padding: 36rpx;
+  margin-top: 20rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0,0,0,0.05);
+}

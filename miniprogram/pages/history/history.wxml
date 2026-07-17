@@ -1,0 +1,13 @@
+<view class="container">
+  <view class="title">📜 我的历史</view>
+  <view wx:if="{{loading}}" class="muted">加载中…</view>
+  <view wx:elif="{{errMsg}}" class="err">{{errMsg}}</view>
+  <view wx:elif="{{records.length === 0}}" class="muted">还没有记录，去生成一个吧～</view>
+
+  <view wx:for="{{records}}" wx:key="_id" class="card">
+    <view class="date">{{item.date}}</view>
+    <view class="persona">🎭 {{item.persona}}</view>
+    <view class="fortune">{{item.fortune}}</view>
+    <view class="score">运势 {{item.luckScore}}/100</view>
+  </view>
+</view>

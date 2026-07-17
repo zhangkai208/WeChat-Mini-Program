@@ -1,0 +1,4 @@
+.avatar { width: 120rpx; height: 120rpx; border-radius: 50%; margin-bottom: 16rpx; }
+.nick { font-size: 32rpx; font-weight: 700; margin-bottom: 20rpx; }
+.muted { color: #999; margin-bottom: 20rpx; }
+.tip { color: #bbb; font-size: 24rpx; text-align: center; margin-top: 40rpx; }

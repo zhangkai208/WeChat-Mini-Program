@@ -1,0 +1,33 @@
+<view class="container">
+  <view class="title">🎭 今日人设生成器</view>
+
+  <input class="input" placeholder="输入你的名字" bindinput="onNameInput" value="{{name}}" />
+
+  <picker mode="selector" range="{{constellations}}" bindchange="onConstellationChange" value="{{constellationIdx}}">
+    <view class="input">星座：{{constellations[constellationIdx] || '选填'}}</view>
+  </picker>
+
+  <input class="input" placeholder="今天心情如何？（选填）" bindinput="onMoodInput" value="{{mood}}" />
+
+  <button class="btn" bindtap="generate" loading="{{loading}}" disabled="{{loading}}">
+    生成今日人设
+  </button>
+
+  <view wx:if="{{errMsg}}" class="err">{{errMsg}}</view>
+
+  <view wx:if="{{result}}" class="card">
+    <view class="persona">🎭 {{result.persona}}</view>
+    <view class="fortune">{{result.fortune}}</view>
+    <view class="score">今日运势：{{result.luckScore}} / 100</view>
+    <view class="row">
+      <view class="col">
+        <view class="lbl">宜</view>
+        <view wx:for="{{result.yi}}" wx:key="*this" class="item">· {{item}}</view>
+      </view>
+      <view class="col">
+        <view class="lbl">忌</view>
+        <view wx:for="{{result.ji}}" wx:key="*this" class="item">· {{item}}</view>
+      </view>
+    </view>
+  </view>
+</view>

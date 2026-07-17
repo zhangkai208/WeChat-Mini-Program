@@ -1,0 +1,6 @@
+.muted { color: #999; text-align: center; margin-top: 40rpx; }
+.date { font-size: 24rpx; color: #aaa; margin-bottom: 8rpx; }
+.persona { font-size: 32rpx; font-weight: 700; margin-bottom: 8rpx; }
+.fortune { font-size: 28rpx; color: #555; margin-bottom: 8rpx; }
+.score { font-size: 26rpx; color: #e8a87c; }
+.card { margin-bottom: 24rpx; }

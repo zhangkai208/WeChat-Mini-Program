@@ -1,0 +1,13 @@
+# 微信开发者工具（含本地配置，可能含敏感信息）
+project.private.config.json
+
+# 依赖
+node_modules/
+miniprogram_npm/
+
+# 系统
+.DS_Store
+Thumbs.db
+
+# 日志
+*.log
