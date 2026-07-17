@@ -1,14 +1,15 @@
 // 云函数：generatePersona
-// 职责：拿openid → 查当天是否已生成 → 拼prompt → HTTP调AI → 解析 → 存records → 返回
+// 职责：拿openid → 查当天是否已生成 → 拼prompt → SDK调AI → 解析 → 存records → 返回
 //
-// 安全：AI_KEY 只从环境变量读，绝不硬编码、不入库、不入日志。
-//       AI_URL/AI_MODEL 同样走环境变量。
+// 两个 SDK 并存（各司其职）：
+//   wx-server-sdk       → getWXContext() 拿调用者 openid + 操作云数据库（小程序场景特有，node-sdk 没有）
+//   @cloudbase/node-sdk → 调 AI（createModel/generateText，走环境鉴权，不需要 AI_KEY）
+//
+// 安全：AI 走 SDK 环境鉴权，不再需要 AI_URL/AI_KEY；模型名 AI_MODEL 仍走环境变量。
 const cloud = require('wx-server-sdk')
-const https = require('https')
-const { URL } = require('url')
+const tcb = require('@cloudbase/node-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
-
-const AI_URL = process.env.AI_URL
+const app = tcb.init({ env: 'zk-d2gcfqw9f402f9607', timeout: 60000 })
 
 exports.main = async (event) => {
   const { name, constellation = '', mood = '' } = event
@@ -92,51 +93,17 @@ function buildMessages({ name, constellation, mood, today }) {
   ]
 }
 
-// OpenAI 兼容格式调用。云函数 Node16 运行时无全局 fetch，改用原生 https。
+// 用云开发 Node SDK 调 AI：createModel('cloudbase') 拿文本模型，generateText 一次性返回。
+// 走环境鉴权（不需要 AI_KEY）；返回的 res.text 已是纯文本，直接喂给 parseAIJson。
+// 之前手搓 https 的 45 行（拼URL/字节长度/chunk拼接/状态码判断）全部省掉。
 async function callAI(messages) {
-  const key = process.env.AI_KEY
-  if (!AI_URL) throw new Error('未配置 AI_URL')
-  if (!key) throw new Error('未配置 AI_KEY')
-
-  const body = JSON.stringify({
+  const model = app.ai().createModel('cloudbase')
+  const res = await model.generateText({
     model: process.env.AI_MODEL,
     messages,
     temperature: 0.9
   })
-
-  const u = new URL(AI_URL)
-  const options = {
-    method: 'POST',
-    hostname: u.hostname,
-    path: u.pathname + u.search,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer ' + key,
-      // 用字节长度，避免中文 body 被算短导致请求被截断
-      'Content-Length': Buffer.byteLength(body)
-    }
-  }
-
-  const text = await new Promise((resolve, reject) => {
-    const req = https.request(options, (res) => {
-      let chunk = ''
-      res.on('data', (c) => { chunk += c })
-      res.on('end', () => {
-        if (res.statusCode < 200 || res.statusCode >= 300) {
-          // chunk 是网关响应体，不含 key，带上一段方便排查
-          reject(new Error('HTTP ' + res.statusCode + (chunk ? '：' + chunk.slice(0, 200) : '')))
-          return
-        }
-        resolve(chunk)
-      })
-    })
-    req.on('error', reject)
-    req.write(body)
-    req.end()
-  })
-
-  const data = JSON.parse(text)
-  return data.choices[0].message.content
+  return res.text
 }
 
 function parseAIJson(text) {
