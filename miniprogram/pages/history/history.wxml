@@ -4,7 +4,7 @@
   <view wx:if="{{errMsg}}" class="err">{{errMsg}}</view>
   <view wx:elif="{{records.length === 0 && !loading}}" class="muted">还没有记录，去生成一个吧～</view>
 
-  <view wx:for="{{records}}" wx:key="_id" class="card">
+  <view wx:for="{{records}}" wx:key="_id" class="card" bindtap="onTapRecord" data-record="{{item}}">
     <view class="date">{{item.date}}</view>
     <view class="persona">🎭 {{item.persona}}</view>
     <view class="fortune">{{item.fortune}}</view>

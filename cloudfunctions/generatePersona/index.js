@@ -5,7 +5,7 @@
 //   wx-server-sdk       → getWXContext() 拿调用者 openid + 操作云数据库（小程序场景特有，node-sdk 没有）
 //   @cloudbase/node-sdk → 调 AI（createModel/generateText，走环境鉴权，不需要 AI_KEY）
 //
-// 安全：AI 走 SDK 环境鉴权，不再需要 AI_URL/AI_KEY；模型名 AI_MODEL 仍走环境变量。
+// 安全：AI 走 SDK 环境鉴权，不再需要 AI_URL/AI_KEY；模型名 hy3 写死在代码（与生图一致，不再依赖环境变量）。
 const cloud = require('wx-server-sdk')
 const tcb = require('@cloudbase/node-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
@@ -60,7 +60,7 @@ exports.main = async (event) => {
   }
 
   // 5. 写入 records（显式写 _openid，否则前端"仅创建者可读写"读不到）
-  await db.collection('records').add({
+  const addRes = await db.collection('records').add({
     data: {
       _openid: OPENID,
       name, constellation, mood,
@@ -74,8 +74,8 @@ exports.main = async (event) => {
     }
   })
 
-  // 6. 返回给前端
-  return { code: 'OK', data: parsed }
+  // 6. 返回给前端（带 _id，供前端生成海报时定位记录、拼 cloudPath）
+  return { code: 'OK', data: { ...parsed, _id: addRes._id } }
 }
 
 function buildMessages({ name, constellation, mood, today }) {
@@ -99,7 +99,7 @@ function buildMessages({ name, constellation, mood, today }) {
 async function callAI(messages) {
   const model = app.ai().createModel('cloudbase')
   const res = await model.generateText({
-    model: process.env.AI_MODEL,
+    model: 'hy3',
     messages,
     temperature: 0.9
   })

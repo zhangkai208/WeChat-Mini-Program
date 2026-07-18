@@ -1,32 +1,50 @@
 // 云函数：genPosterImage
-// 职责：拼 prompt → 用 @cloudbase/node-sdk（云开发 Node SDK）调 HY-Image 文生图 → 返回图片 URL
+// 职责（扩展）：按 action 分派——
+//   getToday：查当天 record 有无 posterFileID，有就返缓存 fileID，没有就生图返背景图 url
+//   save    ：把合成海报的 fileID 回写到当天 record
 //
-// 为什么用 @cloudbase/node-sdk 而不是 wx-server-sdk：
-//   小程序成长计划「仅支持小程序 SDK 和云开发 SDK」(AI_CHANNEL_NOT_ALLOWED)。
-//   实测 wx-server-sdk 的 cloud.ai() 仍被拒——它不被认可为合法 channel；
-//   @cloudbase/node-sdk 是文档指定的"云开发 Node SDK"，且文档明说"图片生成仅在 Node SDK 中可用"。
-// 好处：走环境自带鉴权，不需要 AI_URL/AI_KEY。
+// 两个 SDK 并存（与 generatePersona 一致）：
+//   wx-server-sdk       → getWXContext() 取 openid + 操作 records 数据库
+//   @cloudbase/node-sdk → 调 AI 生图（createImageModel，走环境鉴权，不需要 AI_KEY）
 //
-// ⚠️ 返回的图片 URL 只有 24 小时有效！前端拿到后必须立即 downloadFile 画进 Canvas，不能存库。
+// ⚠️ 返回的生图 url 只有 24 小时有效；前端拿到后必须立即 downloadFile 画进 Canvas。
+const cloud = require('wx-server-sdk')
 const tcb = require('@cloudbase/node-sdk')
-
-// 生图慢（十几秒），单次 HTTP 超时调到 150s，避免默认超时掐断
-const app = tcb.init({
-  env: 'zk-d2gcfqw9f402f9607',   // 环境 ID（公开信息，非密钥）
-  timeout: 150000
-})
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+const app = tcb.init({ env: 'zk-d2gcfqw9f402f9607', timeout: 150000 })
 
 exports.main = async (event) => {
-  const { constellation = '', persona = '' } = event
-  const prompt = buildPrompt(constellation, persona)
+  const { action = 'getToday', recordId, constellation = '', persona = '', fileID } = event
+  const { OPENID } = cloud.getWXContext()
+  const db = cloud.database()
 
+  // —— action === 'save'：回写 posterFileID ——
+  if (action === 'save') {
+    const upd = await db.collection('records')
+      .where({ _id: recordId, _openid: OPENID })   // 双校验，防伪造他人 recordId
+      .update({ data: { posterFileID: fileID } })
+    if (upd.stats.updated === 0) return { code: 'NOT_FOUND', msg: '记录不存在或无权操作' }
+    return { code: 'OK' }
+  }
+
+  // —— action === 'getToday'：探缓存，命中直接返，未命中生图 ——
+  const r = await db.collection('records')
+    .where({ _id: recordId, _openid: OPENID })
+    .limit(1).get()
+  if (!r.data.length) return { code: 'NOT_FOUND', msg: '记录不存在或无权操作' }
+  if (r.data[0].posterFileID) {
+    return { code: 'CACHED', posterFileID: r.data[0].posterFileID }
+  }
+
+  // 未命中：生图（沿用原逻辑）
   try {
+    const prompt = buildPrompt(constellation, persona)
     const imageModel = app.ai().createImageModel('hunyuan-image')
     const res = await imageModel.generateImage({
       model: 'HY-Image-3.0-Plus-4090-Tob-v1.0',
       prompt,
-      size: '720x1280',          // 竖图，面积合规、适合手机海报
-      revise: { value: false }   // 关掉 prompt 改写，省约 30s
+      size: '720x1280',
+      revise: { value: false }
     })
     const url = res.data[0] && res.data[0].url
     if (!url) return { code: 'AI_ERR', msg: 'AI 未返回图片' }

@@ -55,10 +55,4 @@
 
   <!-- 离屏画布：只用来绘制海报图，不直接展示（必须保留尺寸，Canvas 2D 才能绘制） -->
   <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
-
-  <!-- 海报预览层：长按图片 → 微信原生"保存到相册"菜单 -->
-  <view wx:if="{{posterVisible}}" class="poster-mask" bindtap="closePoster">
-    <image src="{{posterTempPath}}" mode="widthFix" show-menu-by-longpress="true" class="poster-img" catchtap="" />
-    <view class="poster-tip">📷 长按图片可保存到相册</view>
-  </view>
 </view>

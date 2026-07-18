@@ -1,9 +1,10 @@
 {
   "name": "genPosterImage",
   "version": "1.0.0",
-  "description": "文生图：生成今日人设海报背景图（HY-Image）",
+  "description": "获取/保存今日人设海报（查缓存/生图/回写）",
   "main": "index.js",
   "dependencies": {
-    "@cloudbase/node-sdk": "latest"
+    "@cloudbase/node-sdk": "latest",
+    "wx-server-sdk": "latest"
   }
 }

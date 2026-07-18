@@ -10,9 +10,7 @@ Page({
     userInfo: null,   // 已登录：{ avatarUrl, nickName }
     avatarUrl: '',    // 登录表单中选的头像（临时路径）
     nickName: '',     // 登录表单中填的昵称
-    posterLoading: false,   // 海报生成中（生图云函数十几秒）
-    posterTempPath: '',     // Canvas 绘制完成的海报临时路径
-    posterVisible: false    // 是否显示全屏海报预览
+    posterLoading: false    // 海报生成中（生图十几秒；命中当天缓存则秒开）
   },
 
   // 每次进入首页，从本地缓存读登录态
@@ -88,45 +86,67 @@ Page({
   },
 
   // —— 海报功能 ——
-  // 点"生成海报"：调生图云函数 → 下背景图 → Canvas 绘制 → 导出 → 全屏预览（长按保存）
+  // 点"生成海报"：先探缓存——命中（当天已生成）直接预览；未命中才生图→合成→上传云存储→回写→预览
   async onGenPoster() {
-    if (!this.data.result) return
+    const r = this.data.result
+    if (!r) return
+    if (!r._id) { wx.showToast({ title: '记录信息缺失，请重新生成', icon: 'none' }); return }
+
     this.setData({ posterLoading: true })
     try {
-      // 1. 调云函数生成背景图（十几秒）
-      const cf = await wx.cloud.callFunction({
+      // ① 探缓存（命中就不生图，省十几秒、图固定）
+      const probe = await wx.cloud.callFunction({
         name: 'genPosterImage',
         data: {
+          action: 'getToday',
+          recordId: r._id,
           constellation: this.data.constellations[this.data.constellationIdx],
-          persona: this.data.result.persona
+          persona: r.persona
         }
       })
-      if (cf.result.code !== 'OK') throw new Error(cf.result.msg || '生图失败')
+      const p = probe.result
+      if (p.code === 'CACHED') {
+        wx.previewImage({ urls: [p.posterFileID], current: p.posterFileID })
+        return
+      }
+      if (p.code !== 'OK') throw new Error(p.msg || '生图失败')
 
-      // 2. 下背景图到本地临时路径（Canvas 2D 的 createImage 只吃本地路径，不能直接用网络 URL）
+      // ② 下背景图（Canvas 2D 的 createImage 只吃本地路径，不能直接用网络 URL）
       // ⚠️ wx.downloadFile 返回的是 downloadTask（用于 abort/监听进度），不走 promise 化——
       //    不能直接 await，要用 success/fail 回调包一层 Promise 才能拿到 {tempFilePath, statusCode}
       const dl = await new Promise((resolve, reject) => {
-        wx.downloadFile({ url: cf.result.url, success: resolve, fail: reject })
+        wx.downloadFile({ url: p.url, success: resolve, fail: reject })
       })
       if (dl.statusCode !== 200 || !dl.tempFilePath) {
         throw new Error('下载失败（HTTP ' + dl.statusCode + '）')
       }
 
-      // 3. 离屏 Canvas 绘制 + 导出海报图
+      // ③ 离屏 Canvas 合成海报
       const posterPath = await this.drawPoster(dl.tempFilePath)
 
-      // 4. 全屏预览（长按图片 → 微信原生"保存到相册"，不用写授权代码）
-      this.setData({ posterTempPath: posterPath, posterVisible: true })
+      // ④ 上传云存储（cloudPath 用 recordId，当天同名覆盖；fileID 永久有效）
+      const up = await wx.cloud.uploadFile({
+        cloudPath: 'posters/' + r._id + '.png',
+        filePath: posterPath
+      })
+
+      // ⑤ 回写 fileID 到当天记录（best-effort：失败只 warn 不阻断预览，下次重走生图）
+      try {
+        await wx.cloud.callFunction({
+          name: 'genPosterImage',
+          data: { action: 'save', recordId: r._id, fileID: up.fileID }
+        })
+      } catch (e) {
+        console.warn('poster writeback failed', e)
+      }
+
+      // ⑥ 预览（wx.previewImage 原生支持 cloud:// fileID，自带"保存到相册"）
+      wx.previewImage({ urls: [up.fileID], current: up.fileID })
     } catch (e) {
       wx.showToast({ title: '海报失败：' + (e.errMsg || e.message), icon: 'none' })
     } finally {
       this.setData({ posterLoading: false })
     }
-  },
-
-  closePoster() {
-    this.setData({ posterVisible: false })
   },
 
   // 在离屏 Canvas 上画海报：背景图全屏，文字直接画在图上（无黑卡）。

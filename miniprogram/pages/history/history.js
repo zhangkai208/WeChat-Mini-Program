@@ -39,5 +39,15 @@ Page({
   // 滑到底部自动加载下一页
   onReachBottom() {
     this.loadHistory(false)
+  },
+
+  // 点某条记录：有海报就预览当天那张，没有就提示占位
+  onTapRecord(e) {
+    const rec = e.currentTarget.dataset.record
+    if (rec && rec.posterFileID) {
+      wx.previewImage({ urls: [rec.posterFileID], current: rec.posterFileID })
+    } else {
+      wx.showToast({ title: '当天未生成海报', icon: 'none' })
+    }
   }
 })
