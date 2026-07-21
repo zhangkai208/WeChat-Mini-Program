@@ -15,9 +15,9 @@
     "selectedColor": "#e8a87c",
     "backgroundColor": "#ffffff",
     "list": [
-      { "pagePath": "pages/home/home", "text": "生成" },
-      { "pagePath": "pages/history/history", "text": "历史" },
-      { "pagePath": "pages/profile/profile", "text": "我的" }
+      { "pagePath": "pages/home/home", "text": "生成", "iconPath": "images/tab/home.png", "selectedIconPath": "images/tab/home-active.png" },
+      { "pagePath": "pages/history/history", "text": "历史", "iconPath": "images/tab/history.png", "selectedIconPath": "images/tab/history-active.png" },
+      { "pagePath": "pages/profile/profile", "text": "我的", "iconPath": "images/tab/profile.png", "selectedIconPath": "images/tab/profile-active.png" }
     ]
   },
   "sitemapLocation": "sitemap.json"
