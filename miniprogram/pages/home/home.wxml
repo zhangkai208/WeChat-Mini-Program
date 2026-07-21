@@ -1,5 +1,5 @@
 <view class="container">
-  <view class="title">🎭 今日人设生成器</view>
+  <view class="title icon-title-home">今日人设生成器</view>
 
   <!-- 未登录：选头像 + 填昵称 -->
   <view wx:if="{{!userInfo}}">
@@ -34,7 +34,7 @@
   <view wx:if="{{errMsg}}" class="err">{{errMsg}}</view>
 
   <view wx:if="{{result}}" class="card">
-    <view class="persona">🎭 {{result.persona}}</view>
+    <view class="persona icon-persona">{{result.persona}}</view>
     <view class="fortune">{{result.fortune}}</view>
     <view class="score">今日运势：{{result.luckScore}} / 100</view>
     <view class="row">
@@ -48,8 +48,8 @@
       </view>
     </view>
 
-    <button class="btn poster-btn" bindtap="onGenPoster" loading="{{posterLoading}}" disabled="{{posterLoading}}">
-      {{posterLoading ? 'AI 绘制中…' : '🎨 生成海报'}}
+    <button class="btn poster-btn icon-poster-btn" bindtap="onGenPoster" loading="{{posterLoading}}" disabled="{{posterLoading}}">
+      {{posterLoading ? 'AI 绘制中…' : '生成海报'}}
     </button>
   </view>
 

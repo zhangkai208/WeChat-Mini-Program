@@ -1,10 +1,10 @@
 <view class="container">
-  <view class="title">😊 我的</view>
+  <view class="title icon-title-profile">我的</view>
 
   <view wx:if="{{userInfo}}" class="card">
     <image class="avatar" src="{{userInfo.avatarUrl}}" />
     <view class="nick">{{userInfo.nickName}}</view>
-    <view class="sub">🎭 今日人设玩家</view>
+    <view class="sub icon-persona-accent">今日人设玩家</view>
     <button class="btn" bindtap="logout">退出登录</button>
   </view>
 

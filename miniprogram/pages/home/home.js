@@ -165,11 +165,17 @@ Page({
         canvas.height = H * dpr
         ctx.scale(dpr, dpr)
 
-        // 背景图必须 onload 后再画
-        const img = canvas.createImage()
-        img.onload = () => {
+        // 背景图 + 人设图标都要先加载完再画（都是异步；图标是打包进小程序的本地 PNG）
+        const loadImg = (src) => new Promise((res2, rej2) => {
+          const i = canvas.createImage()
+          i.onload = () => res2(i)
+          i.onerror = () => rej2(new Error('图片加载失败'))
+          i.src = src
+        })
+        Promise.all([loadImg(bgPath), loadImg('/images/poster-sticker.png')])
+          .then(([bg, sticker]) => {
           // ① 背景图全屏铺底（不再画黑色卡片）
-          ctx.drawImage(img, 0, 0, W, H)
+          ctx.drawImage(bg, 0, 0, W, H)
 
           const r = this.data.result || {}
           const padX = 72
@@ -177,11 +183,13 @@ Page({
           ctx.lineJoin = 'round'                 // 描边拐角圆滑，避免尖角毛刺
           ctx.strokeStyle = 'rgba(0,0,0,0.45)'   // 文字细描边色（半透明深色）
 
-          // ② 人设（大标题）
+          // ② 人设（图标 + 大标题；文字起点右移、可用宽度相应收窄）
+          const ICON = 56, GAP = 16              // 人设图标显示尺寸 + 与文字间距
+          ctx.drawImage(sticker, padX, 200, ICON, ICON)
           ctx.font = 'bold 60px sans-serif'
           ctx.fillStyle = '#fff'
           ctx.lineWidth = 9
-          let y = wrapText(ctx, '🎭 ' + (r.persona || ''), padX, 200, W - padX * 2, 78, true) + 36
+          let y = wrapText(ctx, r.persona || '', padX + ICON + GAP, 200, W - padX * 2 - ICON - GAP, 78, true) + 36
 
           // ③ 运势
           ctx.font = '38px sans-serif'
@@ -224,9 +232,7 @@ Page({
             success: (o) => resolve(o.tempFilePath),
             fail: (e) => reject(e)
           })
-        }
-        img.onerror = () => reject(new Error('背景图加载失败'))
-        img.src = bgPath
+        }).catch(reject)
       })
     })
   }

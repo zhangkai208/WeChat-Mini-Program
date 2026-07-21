@@ -1,12 +1,12 @@
 <view class="container">
-  <view class="title">📜 我的历史</view>
+  <view class="title icon-title-history">我的历史</view>
 
   <view wx:if="{{errMsg}}" class="err">{{errMsg}}</view>
   <view wx:elif="{{records.length === 0 && !loading}}" class="muted">还没有记录，去生成一个吧～</view>
 
   <view wx:for="{{records}}" wx:key="_id" class="card" bindtap="onTapRecord" data-record="{{item}}">
     <view class="date">{{item.date}}</view>
-    <view class="persona">🎭 {{item.persona}}</view>
+    <view class="persona icon-persona">{{item.persona}}</view>
     <view class="fortune">{{item.fortune}}</view>
     <view class="score">运势 {{item.luckScore}}/100</view>
   </view>
