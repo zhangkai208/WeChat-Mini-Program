@@ -22,6 +22,12 @@ Page({
   onShow() {
     const userInfo = wx.getStorageSync('userInfo')
     if (userInfo) this.setData({ userInfo })
+
+    // ===== 临时调试：前端触发 dailyNotify，验证云调用凭证通不通（定位完即删）=====
+    wx.cloud.callFunction({ name: 'dailyNotify', data: { testMode: true } })
+      .then(r => console.log('TEST_NOTIFY', r.result))
+      .catch(e => console.error('TEST_NOTIFY_ERR', e))
+    // ===== 临时调试结束 =====
   },
 
   // 选头像（button open-type="chooseAvatar" 触发）

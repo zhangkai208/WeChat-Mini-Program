@@ -16,6 +16,7 @@ exports.main = async (event = {}) => {
   const { data } = await db.collection('records').where({ date: dateStr }).get()
 
   let ok = 0, fail = 0
+  const fails = []   // 【临时调试】收集失败详情，定位完连同 home.js 调试行一起删
   for (const r of data) {
     if (!r._openid) continue
     try {
@@ -25,18 +26,19 @@ exports.main = async (event = {}) => {
         page: 'pages/home/home',
         miniprogramState: 'trial',   // 体验版
         data: {
-          // key 必须是模板里关键词的名称（中文）
-          '处理结果': { value: '今日人设待解锁' },
-          '时间': { value: '08:30' },
-          '备注': { value: '快来查看' }
+          // key 必须是模板关键词的英文变量名（{{xx.DATA}} 里的 xx），非中文显示名
+          thing3: { value: '今日人设待解锁' },   // 处理结果
+          time1: { value: '08:30' },             // 时间
+          thing2: { value: '快来查看' }          // 备注
         }
       })
       ok++
     } catch (e) {
       // 多半是「该用户没授权/配额用完」，属预期内，只记不抛
       fail++
+      fails.push({ errCode: e.errCode, errMsg: e.errMsg })   // 【临时调试】
       console.warn('send fail', r._openid, e.errCode, e.errMsg)
     }
   }
-  return { code: 'OK', date: dateStr, total: data.length, ok, fail }
+  return { code: 'OK', date: dateStr, total: data.length, ok, fail, fails }   // 【临时调试】带出 fails
 }
