@@ -1,3 +1,6 @@
+// 订阅消息模板 ID：后台「订阅消息」建模板后填这里（明日提醒，一次性订阅）
+const NOTIFY_TMPL_ID = '8oLgBhItC6t_6pgJaiDuVFqLg-NdIM4Xgm6BQeHnKiE'
+
 Page({
   data: {
     constellations: ['', '白羊', '金牛', '双子', '巨蟹', '狮子', '处女', '天秤', '天蝎', '射手', '摩羯', '水瓶', '双鱼'],
@@ -104,6 +107,18 @@ Page({
       title: r && r.persona ? `我的今日人设是「${r.persona}」` : '快来生成你的今日人设',
       imageUrl: this.data.sharePoster || ''
     }
+  },
+
+  // 开启明日提醒：一次性订阅消息授权（用户点一次 = 云函数次日能发一条）
+  // 必须由独立点击触发，不能藏在 generate 的 await 之后（否则微信判定非用户手势会报错）
+  onSubscribeNotify() {
+    if (!NOTIFY_TMPL_ID) { wx.showToast({ title: '提醒模板未配置', icon: 'none' }); return }
+    wx.requestSubscribeMessage({
+      tmplIds: [NOTIFY_TMPL_ID],
+      success: (res) => {
+        if (res[NOTIFY_TMPL_ID] === 'accept') wx.showToast({ title: '已开启明日提醒', icon: 'success' })
+      }
+    })
   },
 
   // 生图十几秒，遮罩里轮播趣味文案缓解等待焦虑

@@ -22,5 +22,8 @@
 .poster-sub { font-size: 24rpx; color: #999; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* 明日提醒入口：低调的小字链接 */
+.notify-link { text-align: center; color: #e8a87c; font-size: 26rpx; margin-top: 24rpx; }
+
 /* 离屏画布：移出屏幕外，但保留具体尺寸（Canvas 2D 需要实际尺寸才能拿到上下文绘制） */
 .poster-canvas { position: fixed; left: -9999px; top: 0; width: 360px; height: 640px; }

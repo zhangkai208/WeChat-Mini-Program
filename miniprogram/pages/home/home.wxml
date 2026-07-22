@@ -54,6 +54,7 @@
       </button>
       <button wx:if="{{sharePoster}}" class="btn share-btn" open-type="share">分享好友</button>
     </view>
+    <view class="notify-link" bindtap="onSubscribeNotify">明日提醒我 ›</view>
   </view>
 
   <!-- 生图等待遮罩：十几秒生图期间的趣味文案 + 转圈 -->
