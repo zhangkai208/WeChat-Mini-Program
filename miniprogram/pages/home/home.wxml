@@ -48,9 +48,12 @@
       </view>
     </view>
 
-    <button class="btn poster-btn icon-poster-btn" bindtap="onGenPoster" loading="{{posterLoading}}" disabled="{{posterLoading}}">
-      {{posterLoading ? 'AI 绘制中…' : '生成海报'}}
-    </button>
+    <view class="poster-row">
+      <button class="btn poster-btn icon-poster-btn" bindtap="onGenPoster" loading="{{posterLoading}}" disabled="{{posterLoading}}">
+        {{posterLoading ? 'AI 绘制中…' : '生成海报'}}
+      </button>
+      <button wx:if="{{sharePoster}}" class="btn share-btn" open-type="share">分享好友</button>
+    </view>
   </view>
 
   <!-- 离屏画布：只用来绘制海报图，不直接展示（必须保留尺寸，Canvas 2D 才能绘制） -->

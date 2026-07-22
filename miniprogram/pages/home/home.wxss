@@ -6,8 +6,13 @@
 .lbl { font-weight: 700; margin-bottom: 12rpx; }
 .item { font-size: 28rpx; color: #666; line-height: 1.8; }
 
-/* 生成海报按钮：白底橘描边，区别于主按钮 */
-.poster-btn { margin-top: 30rpx; background: #fff; color: #e8a87c; border: 1rpx solid #e8a87c; }
+/* 海报 + 分享按钮并排 */
+.poster-row { display: flex; gap: 20rpx; margin-top: 30rpx; }
+.poster-row .btn { flex: 1; margin: 0; }
+/* 生成海报按钮：白底橘描边（次按钮） */
+.poster-btn { background: #fff; color: #e8a87c; border: 1rpx solid #e8a87c; }
+/* 分享好友按钮：橘底白字（主按钮款），和海报一虚一实 */
+.share-btn { background: #e8a87c; color: #fff; }
 
 /* 离屏画布：移出屏幕外，但保留具体尺寸（Canvas 2D 需要实际尺寸才能拿到上下文绘制） */
 .poster-canvas { position: fixed; left: -9999px; top: 0; width: 360px; height: 640px; }

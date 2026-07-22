@@ -10,7 +10,8 @@ Page({
     userInfo: null,   // 已登录：{ avatarUrl, nickName }
     avatarUrl: '',    // 登录表单中选的头像（临时路径）
     nickName: '',     // 登录表单中填的昵称
-    posterLoading: false    // 海报生成中（生图十几秒；命中当天缓存则秒开）
+    posterLoading: false,   // 海报生成中（生图十几秒；命中当天缓存则秒开）
+    sharePoster: ''         // 刚生成的海报本地路径，用作分享封面（tempFilePath，会话内有效）
   },
 
   // 每次进入首页，从本地缓存读登录态
@@ -85,6 +86,25 @@ Page({
     }
   },
 
+  // 转发给好友/群：标题带当前人设，封面用刚生成的海报；落到首页让别人自己生成（不暴露自己的记录）
+  onShareAppMessage() {
+    const r = this.data.result
+    return {
+      title: r && r.persona ? `我的今日人设是「${r.persona}」` : '快来生成你的今日人设',
+      path: '/pages/home/home',
+      imageUrl: this.data.sharePoster || ''
+    }
+  },
+
+  // 分享到朋友圈
+  onShareTimeline() {
+    const r = this.data.result
+    return {
+      title: r && r.persona ? `我的今日人设是「${r.persona}」` : '快来生成你的今日人设',
+      imageUrl: this.data.sharePoster || ''
+    }
+  },
+
   // —— 海报功能 ——
   // 点"生成海报"：先探缓存——命中（当天已生成）直接预览；未命中才生图→合成→上传云存储→回写→预览
   async onGenPoster() {
@@ -107,6 +127,11 @@ Page({
       const p = probe.result
       if (p.code === 'CACHED') {
         wx.previewImage({ urls: [p.posterFileID], current: p.posterFileID })
+        // 缓存命中：fileID 不能直接当分享封面，转成临时网络 URL 存起来，让分享按钮出现
+        wx.cloud.getTempFileURL({ fileList: [p.posterFileID] }).then((res) => {
+          const f = res.fileList && res.fileList[0]
+          if (f && f.tempFileURL) this.setData({ sharePoster: f.tempFileURL })
+        })
         return
       }
       if (p.code !== 'OK') throw new Error(p.msg || '生图失败')
@@ -123,6 +148,7 @@ Page({
 
       // ③ 离屏 Canvas 合成海报
       const posterPath = await this.drawPoster(dl.tempFilePath)
+      this.setData({ sharePoster: posterPath })   // 存本地海报路径，分享时当封面
 
       // ④ 上传云存储（cloudPath 用 recordId，当天同名覆盖；fileID 永久有效）
       const up = await wx.cloud.uploadFile({
