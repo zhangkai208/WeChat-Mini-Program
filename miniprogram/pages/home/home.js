@@ -165,15 +165,14 @@ Page({
         canvas.height = H * dpr
         ctx.scale(dpr, dpr)
 
-        // 背景图 + 人设图标都要先加载完再画（都是异步；图标是打包进小程序的本地 PNG）
+        // 背景图必须 onload 后再画（Canvas 2D 的 createImage 是异步）
         const loadImg = (src) => new Promise((res2, rej2) => {
           const i = canvas.createImage()
           i.onload = () => res2(i)
           i.onerror = () => rej2(new Error('图片加载失败'))
           i.src = src
         })
-        Promise.all([loadImg(bgPath), loadImg('/images/poster-sticker.png')])
-          .then(([bg, sticker]) => {
+        loadImg(bgPath).then((bg) => {
           // ① 背景图全屏铺底（不再画黑色卡片）
           ctx.drawImage(bg, 0, 0, W, H)
 
@@ -182,27 +181,48 @@ Page({
           ctx.textBaseline = 'top'
           ctx.lineJoin = 'round'                 // 描边拐角圆滑，避免尖角毛刺
           ctx.strokeStyle = 'rgba(0,0,0,0.45)'   // 文字细描边色（半透明深色）
-
-          // ② 人设（图标 + 大标题；文字起点右移、可用宽度相应收窄）
-          const ICON = 56, GAP = 16              // 人设图标显示尺寸 + 与文字间距
-          ctx.drawImage(sticker, padX, 200, ICON, ICON)
-          ctx.font = 'bold 60px sans-serif'
           ctx.fillStyle = '#fff'
+
+          // ② 人设（大标题；自适应缩字号保证单行，极长才截断省略）
+          const titleW = W - padX * 2            // 标题可用宽度（576px，60px 字号约放 9 个中文字）
+          let persona = r.persona || ''
+          let tFont = 40
+          for (let f = 60; f >= 40; f -= 2) {    // 60→40 找一个能单行放下的最大字号
+            ctx.font = `bold ${f}px sans-serif`
+            if (ctx.measureText(persona).width <= titleW) { tFont = f; break }
+          }
+          ctx.font = `bold ${tFont}px sans-serif`
+          while (ctx.measureText(persona).width > titleW && persona.length > 1) {
+            persona = persona.slice(0, -1)       // 缩到 40px 仍放不下，逐字截断
+          }
+          if (persona !== (r.persona || '')) persona = persona.slice(0, -1) + '…'
           ctx.lineWidth = 9
-          let y = wrapText(ctx, r.persona || '', padX + ICON + GAP, 200, W - padX * 2 - ICON - GAP, 78, true) + 36
+          ctx.strokeText(persona, padX, 200)
+          ctx.fillText(persona, padX, 200)
+          let y = 200 + tFont + 36               // 标题下方 y（行高随实际字号）
 
           // ③ 运势
           ctx.font = '38px sans-serif'
-          ctx.fillStyle = '#fff'
           ctx.lineWidth = 7
           y = wrapText(ctx, r.fortune || '', padX, y, W - padX * 2, 56, true) + 32
 
-          // ④ 宜 / 忌
-          ctx.font = 'bold 34px sans-serif'
-          ctx.fillStyle = '#fff'
-          ctx.lineWidth = 6
-          y = wrapText(ctx, '宜 ' + (r.yi || []).join('、'), padX, y, W - padX * 2, 52, true) + 18
-          y = wrapText(ctx, '忌 ' + (r.ji || []).join('、'), padX, y, W - padX * 2, 52, true) + 40
+          // ④ 宜 / 忌（标签独占一行，下面每条各占一行）
+          const drawList = (label, items, top) => {
+            ctx.fillStyle = '#fff'
+            ctx.font = 'bold 36px sans-serif'
+            ctx.lineWidth = 6
+            ctx.strokeText(label, padX, top); ctx.fillText(label, padX, top)
+            let yy = top + 52
+            ctx.font = '32px sans-serif'
+            ctx.lineWidth = 5
+            for (const it of items) {
+              ctx.strokeText('· ' + it, padX + 28, yy); ctx.fillText('· ' + it, padX + 28, yy)
+              yy += 46
+            }
+            return yy
+          }
+          y = drawList('宜', r.yi || [], y) + 16
+          y = drawList('忌', r.ji || [], y) + 24
 
           // ⑤ 分数（暖橘大数字，单行描边）
           const score = (r.luckScore != null && r.luckScore !== '') ? r.luckScore : '--'
