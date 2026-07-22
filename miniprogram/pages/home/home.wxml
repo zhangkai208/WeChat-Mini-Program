@@ -56,6 +56,15 @@
     </view>
   </view>
 
+  <!-- 生图等待遮罩：十几秒生图期间的趣味文案 + 转圈 -->
+  <view wx:if="{{posterLoading}}" class="poster-mask">
+    <view class="poster-loading">
+      <view class="poster-spinner"></view>
+      <view class="poster-tip">{{posterTip}}</view>
+      <view class="poster-sub">AI 绘图约需 10-15 秒</view>
+    </view>
+  </view>
+
   <!-- 离屏画布：只用来绘制海报图，不直接展示（必须保留尺寸，Canvas 2D 才能绘制） -->
   <canvas type="2d" id="posterCanvas" class="poster-canvas"></canvas>
 </view>

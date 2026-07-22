@@ -14,5 +14,13 @@
 /* 分享好友按钮：橘底白字（主按钮款），和海报一虚一实 */
 .share-btn { background: #e8a87c; color: #fff; }
 
+/* 生图等待遮罩 */
+.poster-mask { position: fixed; left: 0; top: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 999; }
+.poster-loading { background: #fff; border-radius: 24rpx; padding: 60rpx 50rpx; width: 60%; display: flex; flex-direction: column; align-items: center; }
+.poster-spinner { width: 60rpx; height: 60rpx; border: 6rpx solid #eee; border-top-color: #e8a87c; border-radius: 50%; animation: spin 0.8s linear infinite; margin-bottom: 30rpx; }
+.poster-tip { font-size: 30rpx; color: #333; margin-bottom: 16rpx; }
+.poster-sub { font-size: 24rpx; color: #999; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* 离屏画布：移出屏幕外，但保留具体尺寸（Canvas 2D 需要实际尺寸才能拿到上下文绘制） */
 .poster-canvas { position: fixed; left: -9999px; top: 0; width: 360px; height: 640px; }

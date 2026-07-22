@@ -11,7 +11,8 @@ Page({
     avatarUrl: '',    // 登录表单中选的头像（临时路径）
     nickName: '',     // 登录表单中填的昵称
     posterLoading: false,   // 海报生成中（生图十几秒；命中当天缓存则秒开）
-    sharePoster: ''         // 刚生成的海报本地路径，用作分享封面（tempFilePath，会话内有效）
+    sharePoster: '',        // 刚生成的海报本地路径，用作分享封面（tempFilePath，会话内有效）
+    posterTip: ''           // 生图遮罩的轮播文案
   },
 
   // 每次进入首页，从本地缓存读登录态
@@ -105,6 +106,20 @@ Page({
     }
   },
 
+  // 生图十几秒，遮罩里轮播趣味文案缓解等待焦虑
+  startPosterTips() {
+    const tips = ['AI 正在为你捏脸…', '星座部门紧急开会中…', '正在挑选今天的宜忌…', '调色盘快调好了…', '马上就好，再等一下～']
+    this.setData({ posterTip: tips[0] })
+    let i = 0
+    this.posterTipTimer = setInterval(() => {
+      i = (i + 1) % tips.length
+      this.setData({ posterTip: tips[i] })
+    }, 2500)
+  },
+  stopPosterTips() {
+    if (this.posterTipTimer) { clearInterval(this.posterTipTimer); this.posterTipTimer = null }
+  },
+
   // —— 海报功能 ——
   // 点"生成海报"：先探缓存——命中（当天已生成）直接预览；未命中才生图→合成→上传云存储→回写→预览
   async onGenPoster() {
@@ -113,6 +128,7 @@ Page({
     if (!r._id) { wx.showToast({ title: '记录信息缺失，请重新生成', icon: 'none' }); return }
 
     this.setData({ posterLoading: true })
+    this.startPosterTips()
     try {
       // ① 探缓存（命中就不生图，省十几秒、图固定）
       const probe = await wx.cloud.callFunction({
@@ -171,6 +187,7 @@ Page({
     } catch (e) {
       wx.showToast({ title: '海报失败：' + (e.errMsg || e.message), icon: 'none' })
     } finally {
+      this.stopPosterTips()
       this.setData({ posterLoading: false })
     }
   },
