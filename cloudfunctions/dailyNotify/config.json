@@ -6,7 +6,7 @@
     {
       "name": "dailyTimer",
       "type": "timer",
-      "config": "0 30 8 * * * *"
+      "config": "0 0 14 * * * *"
     }
   ]
 }

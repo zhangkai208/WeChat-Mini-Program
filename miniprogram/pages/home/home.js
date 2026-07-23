@@ -22,12 +22,6 @@ Page({
   onShow() {
     const userInfo = wx.getStorageSync('userInfo')
     if (userInfo) this.setData({ userInfo })
-
-    // ===== 临时调试：前端触发 dailyNotify，验证云调用凭证通不通（定位完即删）=====
-    wx.cloud.callFunction({ name: 'dailyNotify', data: { testMode: true } })
-      .then(r => console.log('TEST_NOTIFY', r.result))
-      .catch(e => console.error('TEST_NOTIFY_ERR', e))
-    // ===== 临时调试结束 =====
   },
 
   // 选头像（button open-type="chooseAvatar" 触发）
@@ -88,6 +82,8 @@ Page({
         this.setData({ errMsg: r.msg || '生成失败，请重试' })
       } else {
         this.setData({ result: r.data })
+        // 一次性订阅：点一次攒一条配额。引导用户点卡片底部「明日提醒我」
+        wx.showToast({ title: '点「明日提醒我」明早召唤你', icon: 'none', duration: 2500 })
       }
     } catch (e) {
       this.setData({ errMsg: '调用失败：' + (e.errMsg || e.message) })
@@ -122,7 +118,11 @@ Page({
     wx.requestSubscribeMessage({
       tmplIds: [NOTIFY_TMPL_ID],
       success: (res) => {
-        if (res[NOTIFY_TMPL_ID] === 'accept') wx.showToast({ title: '已开启明日提醒', icon: 'success' })
+        if (res[NOTIFY_TMPL_ID] !== 'accept') return
+        // 授权成功 → 登记 openid 到 subscribes，dailyNotify 次日 14:00 才有发送对象
+        wx.cloud.callFunction({ name: 'addSubscribe' })
+          .then(() => wx.showToast({ title: '已开启明日提醒', icon: 'success' }))
+          .catch(() => wx.showToast({ title: '登记失败，稍后再试', icon: 'none' }))
       }
     })
   },
